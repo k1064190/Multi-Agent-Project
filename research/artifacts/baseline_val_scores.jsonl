@@ -1,0 +1,2 @@
+{"model": "qwen3.5:0.8b", "val_score": 63.92, "elapsed_sec": 3.3, "task_base": "http://127.0.0.1:11435"}
+{"model": "gemma4:e2b", "val_score": 81.8, "elapsed_sec": 4.1, "task_base": "http://127.0.0.1:11435"}

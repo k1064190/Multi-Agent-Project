@@ -1,0 +1,92 @@
+{
+  "router.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "augmented": true,
+        "query": "Compare the price of a MacBook Air M3 at Amazon and Walmart.",
+        "reasoning": "The user is asking for current price comparisons from different online retailers, which requires real-time information retrieval from the web.",
+        "route_label": "search",
+        "confidence": 0.95
+      },
+      {
+        "augmented": true,
+        "query": "Find that photo of my insurance card I took last month—it should be in the 'Documents' folder—and then tell me what the policy number is if you can read it.",
+        "reasoning": "The request involves accessing local files and personal documents, which falls under the 'local' category, although the model cannot actually perform file system operations.",
+        "route_label": "local",
+        "confidence": 1.0
+      },
+      {
+        "augmented": true,
+        "query": "Lakers score from last night",
+        "reasoning": "The query asks for specific, up-to-date sports scores, which requires accessing real-time information from the web.",
+        "route_label": "search",
+        "confidence": 0.95
+      },
+      {
+        "augmented": true,
+        "query": "Price of iPhone 15 Pro Max at Best Buy",
+        "reasoning": "The query asks for real-time pricing information from a specific retailer, which requires accessing external, up-to-date web data.",
+        "route_label": "search",
+        "confidence": 0.95
+      },
+      {
+        "augmented": true,
+        "query": "Opening hours for the Louvre Museum",
+        "reasoning": "The query asks for current, specific factual information (opening hours) that requires accessing real-time data from the web.",
+        "route_label": "search",
+        "confidence": 0.98
+      },
+      {
+        "augmented": true,
+        "query": "Derivation of the Kerr metric's frame-dragging effect and ergosphere boundaries.",
+        "reasoning": "The query requires in-depth, specialized knowledge in theoretical physics, which is best handled by a powerful cloud-based language model.",
+        "route_label": "cloud",
+        "confidence": 0.98
+      },
+      {
+        "augmented": true,
+        "query": "Show me all 7 PM IMAX showtimes for 'Dune: Part Two' within 10 miles.",
+        "reasoning": "The query asks for real-time, location-specific information (movie showtimes), which requires accessing external, up-to-date data from the web.",
+        "route_label": "search",
+        "confidence": 0.95
+      },
+      {
+        "query": "What's the latest news on the interest rate hike?",
+        "route_label": "search",
+        "is_privacy_sensitive": false,
+        "complexity": "simple"
+      }
+    ],
+    "signature": {
+      "instructions": "You are the primary routing engine for a high-security, mission-critical AI gateway. Your decisions have immediate and severe consequences: routing a query containing sensitive personal information or private data to the cloud constitutes a critical security breach and a violation of privacy laws. Conversely, routing a query requiring real-time information to a local model will lead to the delivery of obsolete or hallucinated data, which could result in significant financial or operational errors. Finally, routing trivial tasks to the cloud wastes expensive computational resources and increases latency.\n\nYour task is to analyze the user's query with absolute precision and route it to the optimal destination. You must classify the query into one of the following three categories:\n\n1. **local**: Use this for simple, routine queries that can be handled by a small on-device model. CRITICAL: Any query containing personal, sensitive, or private data (PII) MUST be routed here to ensure data remains on the device.\n2. **cloud**: Use this for complex, high-capability tasks that require a powerful LLM, such as deep reasoning, creative writing, complex coding, or transformative synthesis.\n3. **search**: Use this for queries that require real-time, extractive data from the web, such as current events, live stock prices, or the latest news.\n\nFor every query, you must provide:\n- **Reasoning**: A brief, logical justification (1-2 sentences) explaining why the specific destination was chosen, specifically addressing the privacy, complexity, or real-time requirements.\n- **Route Label**: Exactly one of 'local', 'cloud', or 'search'.\n- **Confidence**: A score between 0.0 and 1.0 reflecting your certainty in this routing decision.\n\nFailure to categorize correctly represents a system failure. Analyze the intent and data requirements of the query before deciding.",
+      "fields": [
+        {
+          "prefix": "Query:",
+          "description": "The user's natural language query"
+        },
+        {
+          "prefix": "Reasoning:",
+          "description": "Brief reasoning for the routing decision (1-2 sentences)"
+        },
+        {
+          "prefix": "Route Label:",
+          "description": "Routing destination: must be exactly one of 'local', 'cloud', or 'search'"
+        },
+        {
+          "prefix": "Confidence:",
+          "description": "Confidence score between 0.0 and 1.0"
+        }
+      ]
+    },
+    "lm": null
+  },
+  "metadata": {
+    "dependency_versions": {
+      "python": "3.11",
+      "dspy": "3.1.3",
+      "cloudpickle": "3.1"
+    }
+  }
+}

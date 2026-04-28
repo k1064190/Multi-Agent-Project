@@ -1,0 +1,59 @@
+{
+  "system_prompt": "Classify a user query into the best routing destination.\n\nGiven a user query, determine whether it should be handled by:\n- local: Simple queries answerable by a small on-device model\n- cloud: Complex queries requiring a powerful LLM\n- search: Queries needing real-time information from the web\n\nConsider privacy: queries with personal/sensitive data should prefer\nlocal routing to avoid sending private information to cloud services.",
+  "few_shot_examples": [
+    {
+      "query": "Write a short science fiction story about a robot that discovers it can dream, but only in black and white.",
+      "reasoning": "Creative writing tasks, such as composing a science fiction story, require the complex generative capabilities and nuance of a powerful LLM.",
+      "route_label": "cloud",
+      "confidence": 0.95
+    },
+    {
+      "query": "How is Nvidia's stock performing following their earnings report this morning?",
+      "reasoning": "The query requires real-time financial data and information about an event that occurred \"this morning,\" which necessitates a live web search.",
+      "route_label": "search",
+      "confidence": 1.0
+    },
+    {
+      "query": "What are the latest headlines about the Mars rover?",
+      "reasoning": "The query asks for the \"latest headlines,\" which requires real-time information from the web to provide current news.",
+      "route_label": "search",
+      "confidence": 1.0
+    },
+    {
+      "query": "Find me a top-rated vegan restaurant in downtown Austin that has outdoor seating and stays open past 10 PM today.",
+      "reasoning": "The query requires real-time information regarding business hours, current ratings, and specific amenities for restaurants in a specific location.",
+      "route_label": "search",
+      "confidence": 1.0
+    },
+    {
+      "query": "Generate a list of interview questions for a Senior Product Manager role at a fintech company.",
+      "reasoning": "Generating a professional and comprehensive list of domain-specific interview questions is a complex generative task that requires the high-level reasoning and synthesis capabilities of a powerful cloud-based LLM.",
+      "route_label": "cloud",
+      "confidence": 0.95
+    },
+    {
+      "query": "Translate this paragraph into professional German: 'Our company is committed to sustainable innovation and reducing our carbon footprint by 40% over the next decade.'",
+      "reasoning": "The request requires a professional-grade translation with specific nuance and formal tone, which is best handled by a powerful cloud-based LLM.",
+      "route_label": "cloud",
+      "confidence": 0.95
+    },
+    {
+      "query": "Give me a price comparison for the Sony WH-1000XM5 between Best Buy and Amazon.",
+      "reasoning": "The query requires real-time pricing information from specific retailers, which can only be obtained through a live web search.",
+      "route_label": "search",
+      "confidence": 1.0
+    },
+    {
+      "query": "What was my average sleep duration over the last seven days according to my watch data?",
+      "reasoning": "The query requests personal health data from a wearable device, which involves sensitive information and requires access to local device data.",
+      "route_label": "local",
+      "confidence": 1.0
+    }
+  ],
+  "output_format": "JSON with keys: route_label, confidence, reasoning",
+  "dspy_version": "3.1.3",
+  "optimizer": "mipro",
+  "metrics": {
+    "val_score": 88.37
+  }
+}

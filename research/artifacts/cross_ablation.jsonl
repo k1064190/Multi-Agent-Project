@@ -1,0 +1,4 @@
+{"model": "qwen3.5:0.8b", "cell": "mipro_instr_x_bfrs_demos", "instruction_source": "mipro", "demos_source": "bfrs", "val_score": 80.28, "elapsed_sec": 403.9}
+{"model": "qwen3.5:0.8b", "cell": "default_instr_x_mipro_demos", "instruction_source": "default", "demos_source": "mipro", "val_score": 69.12, "elapsed_sec": 369.7}
+{"model": "gemma4:e2b", "cell": "mipro_instr_x_bfrs_demos", "instruction_source": "mipro", "demos_source": "bfrs", "val_score": 85.63, "elapsed_sec": 876.0}
+{"model": "gemma4:e2b", "cell": "default_instr_x_mipro_demos", "instruction_source": "default", "demos_source": "mipro", "val_score": 84.08, "elapsed_sec": 793.8}

@@ -1,0 +1,16 @@
+# ABOUTME: Python dependencies for the on-device SLM routing classifier DSPy optimization research.
+# ABOUTME: Loose >= pins; freeze locally with `pip freeze` if exact reproducibility is required.
+
+# DSPy — prompt optimization framework
+dspy>=2.5
+
+# DSPy LM backend
+litellm>=1.50
+
+# Evaluation
+numpy>=1.26
+scikit-learn>=1.5
+
+# Plots (confusion matrix, latency distribution)
+matplotlib>=3.9
+seaborn>=0.13

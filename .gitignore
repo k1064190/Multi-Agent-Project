@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Environment
+.env
+.env.local
+.venv/
+env/
+
+# Claude Code
+.claude/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project-specific
+research/data/generated/*.jsonl
+research/data/generated/**/*.jsonl
+model_optimization/*.tflite
+model_optimization/*.savedmodel/
+
+# Stage 10 — per-user memory layer
+research/data/memory.db*
+
+# Android
+android_app/.gradle/
+android_app/build/
+android_app/app/build/
+android_app/local.properties
+
+# Gradio
+flagged/
+
+# Logs
+*.log
+/tmp/*.log
+
+# Ollama model cache
+.cache/
+.gstack/
+
+# Internal-only — not pushed to public mirror
+CLAUDE.md
+docs/
+

@@ -1,0 +1,93 @@
+{
+  "router.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "augmented": true,
+        "query": "How many steps have I walked so far today? Check my progress.",
+        "reasoning": "The query requests personal, real-time health/activity data, which should be handled locally to respect privacy and access device-specific information.",
+        "route_label": "local",
+        "confidence": 1.0
+      },
+      {
+        "augmented": true,
+        "query": "Generate a list of interview questions for a Senior Product Manager role at a fintech company.",
+        "reasoning": "The query requires generating complex, structured, and context-aware content, which is best handled by a powerful language model (cloud).",
+        "route_label": "cloud",
+        "confidence": 0.983
+      },
+      {
+        "augmented": true,
+        "query": "Draft a 300-word blog post about the benefits of mindfulness meditation for high-stress office environments.",
+        "reasoning": "The request requires generating a long-form, creative, and informative piece of content (a blog post), which is best handled by a powerful language model.",
+        "route_label": "cloud",
+        "confidence": 0.983
+      },
+      {
+        "augmented": true,
+        "query": "Set a five minute timer.",
+        "reasoning": "The query is a command to perform a system action (setting a timer), which the language model cannot execute directly. It is routed locally as a device command, although the action itself cannot be performed by the model.",
+        "route_label": "local",
+        "confidence": 1.0
+      },
+      {
+        "augmented": true,
+        "query": "Translate: 'The subtle nuances of diplomatic immunity often lead to complex international legal disputes that challenge the very foundations of global cooperation.'",
+        "reasoning": "The query requires complex natural language translation, which is best handled by a powerful large language model.",
+        "route_label": "cloud",
+        "confidence": 0.95
+      },
+      {
+        "augmented": true,
+        "query": "I need to know the current exchange rate for USD to Euro. Also, tell me if it's a good time to buy.",
+        "reasoning": "The query requires real-time financial data (exchange rate) and subjective analysis (investment advice), both of which necessitate a web search.",
+        "route_label": "search",
+        "confidence": 0.95
+      },
+      {
+        "augmented": true,
+        "query": "Compare the socio-economic impacts of the Industrial Revolution on Victorian family structures versus modern digital shifts.",
+        "reasoning": "The query requires a complex comparative analysis and synthesis of socio-economic history and modern shifts, which necessitates the reasoning and generative capabilities of a large language model.",
+        "route_label": "cloud",
+        "confidence": 0.95
+      },
+      {
+        "augmented": true,
+        "query": "Current status of United flight 243 from San Francisco to Tokyo.",
+        "reasoning": "The query requires real-time, dynamic information about a flight status, which necessitates a web search.",
+        "route_label": "search",
+        "confidence": 0.95
+      }
+    ],
+    "signature": {
+      "instructions": "Classify a user query into the best routing destination.\n\nGiven a user query, determine whether it should be handled by:\n- local: Simple queries answerable by a small on-device model\n- cloud: Complex queries requiring a powerful LLM\n- search: Queries needing real-time information from the web\n\nConsider privacy: queries with personal/sensitive data should prefer\nlocal routing to avoid sending private information to cloud services.",
+      "fields": [
+        {
+          "prefix": "Query:",
+          "description": "The user's natural language query"
+        },
+        {
+          "prefix": "Reasoning:",
+          "description": "Brief reasoning for the routing decision (1-2 sentences)"
+        },
+        {
+          "prefix": "Route Label:",
+          "description": "Routing destination: must be exactly one of 'local', 'cloud', or 'search'"
+        },
+        {
+          "prefix": "Confidence:",
+          "description": "Confidence score between 0.0 and 1.0"
+        }
+      ]
+    },
+    "lm": null
+  },
+  "metadata": {
+    "dependency_versions": {
+      "python": "3.11",
+      "dspy": "3.1.3",
+      "cloudpickle": "3.1"
+    }
+  }
+}

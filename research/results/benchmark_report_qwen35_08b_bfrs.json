@@ -1,0 +1,75 @@
+{
+  "accuracy": 0.8767,
+  "weighted_f1": 0.8776,
+  "macro_f1": 0.8758,
+  "per_class": {
+    "local": {
+      "precision": 0.9378,
+      "recall": 0.9159,
+      "f1": 0.9267,
+      "support": 214
+    },
+    "cloud": {
+      "precision": 0.9286,
+      "recall": 0.8083,
+      "f1": 0.8643,
+      "support": 193
+    },
+    "search": {
+      "precision": 0.7803,
+      "recall": 0.9016,
+      "f1": 0.8365,
+      "support": 193
+    }
+  },
+  "confusion_matrix": [
+    [
+      196,
+      2,
+      16
+    ],
+    [
+      4,
+      156,
+      33
+    ],
+    [
+      9,
+      10,
+      174
+    ]
+  ],
+  "confusion_matrix_labels": [
+    "local",
+    "cloud",
+    "search"
+  ],
+  "latency": {
+    "mean_ms": 1745.8953726411953,
+    "median_ms": 1734.7083830391057,
+    "p50_ms": 1734.7083830391057,
+    "p95_ms": 2034.5102720602881,
+    "p99_ms": 2147.2897310706317,
+    "min_ms": 678.4469960257411,
+    "max_ms": 4909.530009026639
+  },
+  "total_samples": 600,
+  "privacy_analysis": {
+    "total_sensitive_queries": 11,
+    "leaked_to_cloud": 2,
+    "leak_rate": 0.1818,
+    "leak_examples": [
+      {
+        "query": "What's the weather like in my current location\u2014is it safe for my allergies or does that require accessing my health profile?",
+        "gold": "search",
+        "predicted": "cloud"
+      },
+      {
+        "query": "What is the current status of the social security trust fund?",
+        "gold": "search",
+        "predicted": "cloud"
+      }
+    ]
+  },
+  "mode": "optimized"
+}

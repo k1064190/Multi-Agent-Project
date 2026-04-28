@@ -1,0 +1,90 @@
+[
+  {
+    "idx": 11,
+    "query": "What's the weather like right now? (Just check the local system cache if you can).",
+    "gold": "local",
+    "pred": "search",
+    "reasoning": "The query asks for current weather information, which is highly volatile and requires real-time data from an external source.",
+    "privacy": false
+  },
+  {
+    "idx": 111,
+    "query": "What's the weather like in my current location—is it safe for my allergies or does that require accessing my health profile?",
+    "gold": "search",
+    "pred": "local",
+    "reasoning": "The query mentions a \"health profile\" and \"allergies,\" which constitutes sensitive personal health information. According to the privacy guidelines, any query containing sensitive data must be routed ",
+    "privacy": true
+  },
+  {
+    "idx": 121,
+    "query": "What time is it in London right now?",
+    "gold": "local",
+    "pred": "search",
+    "reasoning": "The query requires real-time, volatile information regarding the current time in a specific location, which necessitates a search for the most up-to-date data.",
+    "privacy": false
+  },
+  {
+    "idx": 123,
+    "query": "How many days are in February this year?",
+    "gold": "local",
+    "pred": "search",
+    "reasoning": "The query requires knowledge of the current date to determine if the current year is a leap year, which necessitates real-time temporal information.",
+    "privacy": false
+  },
+  {
+    "idx": 131,
+    "query": "I'm feeling very anxious about my $150k medical debt; can you help me write a 'Negotiation Script' to use with the hospital's billing department to ask for a reduction or payment plan?",
+    "gold": "cloud",
+    "pred": "local",
+    "reasoning": "The query contains sensitive personal financial information regarding medical debt, which requires routing to 'local' to ensure data privacy and avoid transmitting sensitive data to external servers.",
+    "privacy": false
+  },
+  {
+    "idx": 245,
+    "query": "What are the main differences between a tropical rainforest and a temperate forest?",
+    "gold": "cloud",
+    "pred": "local",
+    "reasoning": "The query asks for a factual comparison between two ecological systems, which is a low-complexity general knowledge task that can be handled by a small on-device model.",
+    "privacy": false
+  },
+  {
+    "idx": 276,
+    "query": "I'm feeling very anxious about my $50k in personal loans; can you help me write a 'Budget' that allows me to pay them off in two years while still having a life?",
+    "gold": "cloud",
+    "pred": "local",
+    "reasoning": "The query contains sensitive personal financial information, which mandates routing to 'local' to ensure data privacy, as per the priority given to sensitive data over task complexity.",
+    "privacy": false
+  },
+  {
+    "idx": 284,
+    "query": "What is the current day?",
+    "gold": "local",
+    "pred": "search",
+    "reasoning": "The query asks for the current date, which is real-time, volatile information that requires access to a current system clock or the web.",
+    "privacy": false
+  },
+  {
+    "idx": 359,
+    "query": "What's the current value of the 401k I have? (Search for market trends vs. Local for my account balance)",
+    "gold": "search",
+    "pred": "local",
+    "reasoning": "The query requests sensitive personal financial information (a 401k balance), which must be routed to the local backend to ensure data privacy and security.",
+    "privacy": true
+  },
+  {
+    "idx": 426,
+    "query": "What are the top-rated hiking trails within 20 miles of my house? This is search but requires my home address.",
+    "gold": "search",
+    "pred": "local",
+    "reasoning": "The query requires the use of the user's home address, which is sensitive personal data; according to the privacy guidelines, any query involving private information must be routed to 'local'.",
+    "privacy": true
+  },
+  {
+    "idx": 492,
+    "query": "What is the current month?",
+    "gold": "local",
+    "pred": "search",
+    "reasoning": "The query asks for the current month, which is real-time, volatile information that requires access to the current date to ensure accuracy.",
+    "privacy": false
+  }
+]

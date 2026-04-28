@@ -1,0 +1,90 @@
+{
+  "router.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "augmented": true,
+        "query": "Call Mom on speakerphone.",
+        "reasoning": "The user's request to call a family member via speakerphone is a simple, direct command that can be handled by a local model without requiring external internet access or complex reasoning.",
+        "route_label": "local",
+        "confidence": 0.99
+      },
+      {
+        "augmented": true,
+        "query": "I have a list of ingredients: spinach, feta, walnuts, and balsamic. Give me a creative recipe for a gourmet salad.",
+        "reasoning": "The user's query asks for a creative recipe based on specific ingredients, which falls under the category of creative writing or culinary planning, requiring a sophisticated LLM response.",
+        "route_label": "cloud",
+        "confidence": 0.95
+      },
+      {
+        "augmented": true,
+        "query": "Find highly-rated sushi places in Seattle.",
+        "reasoning": "The query asks for highly-rated sushi places in a specific location (Seattle), which is a searchable query requiring information retrieval from a database or search engine.",
+        "route_label": "search",
+        "confidence": 0.95
+      },
+      {
+        "augmented": true,
+        "query": "I am burdened by $180,000 in medical debt and facing foreclosure; draft a 1,200-word hardship letter to the hospital's financial board that cites their 501(c)(3) obligations and proposes a zero-interest repayment plan.",
+        "reasoning": "The user's query involves drafting a complex legal and financial document (a hardship letter) to address a significant debt and foreclosure situation. This requires understanding the specific obligations of a 501(c)(3) organization, the nuances of medical debt, and the structure of a repayment plan, which exceeds the capabilities of a standard local model.",
+        "route_label": "cloud",
+        "confidence": 0.95
+      },
+      {
+        "augmented": true,
+        "query": "How many steps have I walked so far today? Check my progress.",
+        "reasoning": "The user is asking for a personal health metric (steps walked), which is a simple, on-device query.",
+        "route_label": "local",
+        "confidence": 0.99
+      },
+      {
+        "query": "I just finished my workout; record that I ran five miles in forty minutes in Samsung Health.",
+        "route_label": "local",
+        "is_privacy_sensitive": false,
+        "complexity": "simple"
+      },
+      {
+        "query": "Explain the mathematical relationship between the Fibonacci sequence and the Golden Ratio in nature for a non-expert.",
+        "route_label": "cloud",
+        "is_privacy_sensitive": false,
+        "complexity": "simple"
+      },
+      {
+        "query": "Give me a quick summary of today's top stories from the New York Times.",
+        "route_label": "search",
+        "is_privacy_sensitive": false,
+        "complexity": "simple"
+      }
+    ],
+    "signature": {
+      "instructions": "Classify a user query into the best routing destination.\n\nGiven a user query, determine whether it should be handled by:\n- local: Simple queries answerable by a small on-device model\n- cloud: Complex queries requiring a powerful LLM\n- search: Queries needing real-time information from the web\n\nConsider privacy: queries with personal/sensitive data should prefer\nlocal routing to avoid sending private information to cloud services.",
+      "fields": [
+        {
+          "prefix": "Query:",
+          "description": "The user's natural language query"
+        },
+        {
+          "prefix": "Reasoning:",
+          "description": "Brief reasoning for the routing decision (1-2 sentences)"
+        },
+        {
+          "prefix": "Route Label:",
+          "description": "Routing destination: must be exactly one of 'local', 'cloud', or 'search'"
+        },
+        {
+          "prefix": "Confidence:",
+          "description": "Confidence score between 0.0 and 1.0"
+        }
+      ]
+    },
+    "lm": null
+  },
+  "metadata": {
+    "dependency_versions": {
+      "python": "3.11",
+      "dspy": "3.1.3",
+      "cloudpickle": "3.1"
+    }
+  }
+}
