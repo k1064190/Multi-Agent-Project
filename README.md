@@ -17,28 +17,47 @@
 목표입니다.
 
 이 프로젝트의 핵심 질문: **DSPy 로 작은 0.8B, 2B 모델을 31B 레퍼런스 모델
-수준의 라우팅 품질에 얼마나 가깝게 끌어올릴 수 있는가?**
+수준의 라우팅 품질에 얼마나 가깝게 끌어올릴 수 있는가?** — 그리고 같은
+질문을 라우팅 너머 **메모리 파이프라인 (추출 / 업데이트 / 인텐트 / 회수)
+4 가지 결정에도 확장 가능한가?** §3 가 첫 번째 질문의 답, §4 가 두 번째
+질문의 진행 중인 답입니다.
 
 ---
 
 ## 1. 파이프라인
 
-<!-- [지금은 이렇게 두고, 나중에 메모리 파트까지 적을 때 확장] -->
+```mermaid
+flowchart LR
+    user[사용자 질의]:::user
+    intent{인텐트 게이트<br/>STATEMENT / RETRACTION / NEITHER}:::dec
+    router[Router SLM<br/>Gemma 4 E2B + DSPy-BFRS]:::dec
+    mem[Memory layer<br/>추출 / 업데이트 / 회수]:::mem
+    local[Local: 같은 SLM<br/>온디바이스 답변]:::be
+    cloud[Cloud: Gemini API<br/>복잡한 생성]:::be
+    search[Search: Perplexity API<br/>실시간 데이터]:::be
+    store[(per-user store<br/>SQLite + sqlite-vec)]:::store
 
-```
-사용자 질의
-   │
-   ▼
-라우터 SLM (Gemma 4 E2B, DSPy-BFRS 최적화)
-   │
-   ├── Local   → 같은 SLM 이 직접 답변 (온디바이스 대화)
-   ├── Cloud   → Gemini API (복잡한 생성)
-   └── Search  → Perplexity API (실시간 데이터)
+    user --> intent
+    intent --> mem
+    intent --> router
+    mem <--> store
+    router --> local
+    router --> cloud
+    router --> search
+
+    classDef user fill:#e0f2fe,stroke:#0369a1
+    classDef dec fill:#fef3c7,stroke:#d97706
+    classDef mem fill:#dcfce7,stroke:#15803d
+    classDef be fill:#f3e8ff,stroke:#7c3aed
+    classDef store fill:#fee2e2,stroke:#dc2626
 ```
 
 라우팅 분류기는 사용자 질의를 **Local / Cloud / Search** 세 가지로
-분류합니다. DSPy 의 `BootstrapFewShotWithRandomSearch` (BFRS), MIPROv2,
-COPRO 를 이용해 Gemini 3 Flash 로 생성한 데이터셋으로 최적화합니다.
+분류합니다 (§3). 같은 SLM 이 동시에 메모리 layer 도 처리합니다 — STATEMENT
+인지 RETRACTION 인지 NEITHER 인지를 *인텐트 게이트* 가 가르고, STATEMENT
+면 추출+업데이트, RETRACTION 이면 회수+삭제로 분기 (§4). DSPy 의
+`BootstrapFewShotWithRandomSearch` (BFRS), MIPROv2, COPRO 를 이용해
+Gemini 3 Flash 로 생성한 데이터셋으로 최적화합니다.
 
 ---
 
@@ -186,7 +205,172 @@ Production 아티팩트: `research/artifacts/optimized_router_state_gemma4_e2b_b
 
 ## 4. Memory DSPy 최적화
 
-<!-- [아직 진행중이므로 그대로] -->
+라우터를 만들고 나서 곧바로 부딪힌 질문: **개인 정보를 기억하는 챗봇**
+을 만들려면 메모리 파이프라인이 필요한데, 메모리 결정은 라우터 분류
+보다 본질적으로 더 복잡합니다. 라우터는 한 메시지 → 한 라벨이지만,
+메모리는 한 메시지 → 0-N 개의 추출된 fact + 각 fact 마다 4-class 결정
+(추가 / 수정 / 삭제 / 무시) + 추가로 *그 메시지가 메모리 관련 의도인지
+잡담인지* 까지. 이를 *하나의 LM 호출* 로 묶으려는 초기 시도는 실패했고
+(§4.1 참조), 결국 **결정을 4 개로 분해해 각각 DSPy 로 최적화** 하는
+접근으로 수렴했습니다.
+
+### 4.1 라우터와 다른 점 — 왜 결정이 4 개로 쪼개졌나
+
+| 결정 | 입력 | 출력 | 결정 cardinality |
+|---|---|---|---|
+| `ExtractMemoryFacts` | 사용자 메시지 | candidate fact 의 *리스트* | 가변 (0-N) |
+| `UpdateMemoryDecision` | fact 1 개 + 기존 유사 메모리 | `ADD / UPDATE / DELETE / NOOP` | fact 마다 1 개 |
+| `DetectMemoryIntent` | 메시지 + 최근 대화 | `STATEMENT / RETRACTION / NEITHER` | 메시지마다 1 개 |
+| `RetractionDecide` | 메시지 + 유사 메모리 | 삭제 대상 ID *리스트* | 가변 (0-N) |
+
+(위 §1 다이어그램에서 *인텐트 게이트* 는 메모리 layer 의 첫 동작이지만
+모든 메시지마다 가장 먼저 호출되어 후속 흐름을 결정하기 때문에 시각적으로
+별도 박스로 그려져 있습니다 — 본질은 메모리 layer 의 4 결정 중 첫 번째.)
+
+처음에는 1 개의 LM 호출로 모두 처리하려 했습니다. 같은 prompt 가
+"이 메시지에서 메모리 관련 의도를 다 처리하라" — 추출도, 업데이트도,
+인텐트 분류도, 회수도. **결정 cardinality 가 다른** 4 가지를 묶으려니
+LM 이 fact 개수와 update 결정 개수를 *동기화* 해야 했고 그게 안 됐습
+니다. 실패 모드: fact 를 3 개 뽑고 update 결정은 1 개만 출력. 또는
+update 결정 4 개 출력 (실제 fact 는 2 개).
+
+분해 이후 각 결정을 별도 DSPy 시그니처로 정의하고 BFRS 로 따로 학습.
+**Cardinality 가 깨질 일이 없음** — 추출의 출력 길이가 N 이면 N 번
+update 호출, 끝. 추가로 인텐트 게이트와 회수를 분리한 이유는 *전체
+context scope 가 다르기* 때문 — 인텐트는 대화 전체를 보고, 회수는
+"회수하기로 정해진 뒤" 어느 row 를 지울지만 봅니다.
+
+이 4 개의 결정 prompt 가 모두 `research/artifacts/optimized_memory_*_gemma4_e2b_bfrs.json`
+에 BFRS 최적화 산출물로 들어 있습니다 — 라우터 artifact 와 동일한
+포맷, 동일한 BFRS 옵티마이저로.
+
+### 4.2 NOOP boundary — 잡담을 메모리로 만들지 않기
+
+`NOOP` 은 4 op 중 하나지만 *나머지 셋 모두에 영향* 을 주는 op 입니다.
+"오늘 날씨 어때?" 같은 잡담이 들어왔을 때 *추출이 빈 list 를 반환* 하면
+update 가 호출조차 안 되어 안전하지만, 추출이 무관한 잡음을 fact 로
+잘못 뽑은 경우에는 update 가 그걸 잡아 `NOOP` 으로 거부해야 메모리가
+지저분해지지 않습니다.
+
+production 측 정량 지표 두 가지:
+
+- **`transient_noise_rate`** — 잡담이 메모리에 fact 로 저장되는 비율.
+- **`duplicate_rate`** — 이미 있는 fact 가 또 저장되는 비율.
+
+두 지표 모두 0 이어야 NOOP boundary 가 견고. 이것을 정확히 맞추는 것이
+워낙 까다로워서 **NOOP instruction 재학습 자체가 한 stage** 였습니다.
+5 개 candidate (A-E) 중 두 가지 hold-out 테스트 — *정정 정확도 테스트*
+(corrected probe, 정정 발화 10 개에 대한 응답 정확도) + *NOOP 경계 테스트*
+(boundary probe, 잡담 12 개를 NOOP 으로 인식하는지) — 를 모두 통과한 A 만
+채택. A 의 validation 점수가 95.14% — 다른 후보 (MIPROv2 기반) 는 점수가
+97.57% 로 더 높았지만 정정 정확도가 8/10 으로 떨어져 탈락.
+**단순함이 점수보다 견고했습니다.**
+
+production prompt md5: `74fada6369759686198400d5e24f2632`.
+
+### 4.3 Live store-state harness — production 측정의 충격
+
+라우터 §3 에서는 hold-out test 셋 600 개의 weighted F1 만 봐도 진척이
+충분히 측정됐습니다. 메모리는 같은 방식으로 측정이 안 됩니다 — 한
+turn 의 점수만으로는 *대화가 진행되면서 store 의 row 들이 어떻게
+변하는지* 를 못 봅니다.
+
+그래서 **store-state harness** 를 도입 — 총 25 개의 multi-turn 시나리오를
+6 개 tier (단순 정정 / 복합 정정 / 시간 경과 / 중복 / 잡담 / 회수) 에
+분배. 시나리오 1 회 실행 시 합계 65 turns 이고, `HARNESS_REPS=3` 으로
+세 번 반복해 총 195 turns 측정. 매 turn 마다 store 의 row 들을 검사하고
+**paraphrase 인식 LLM-as-judge (31B Gemma, 3-rep 다수결)** 가 정답
+스크립트와 일치하는지 판정. 단순 string compare 가 못 잡는 의미 동치
+(*"User is a Yonsei professor"* vs *"The user works at Yonsei University
+as faculty"*) 를 LM 이 vote.
+
+production setup (Gemma 4 E2B + 모든 BFRS artifact) 의 baseline:
+
+| Tier | correction_success_rate | stale_row_rate | verdict |
+|---|---:|---:|---|
+| transient_noise | **100%** | 0% | PASS |
+| duplicate | **100%** | 0% | PASS |
+| simple_correction | 62.5% | 25% | FAIL |
+| compound_correction | 60.0% | 13% | FAIL |
+| longitudinal | 52.9% | 17% | FAIL |
+| retraction | **22.2%** | 40% | FAIL (최하) |
+| **headline** | **54.2%** | 17.9% | — |
+
+`transient_noise` 와 `duplicate` 가 **100% PASS** 인 것이 §4.2 의 NOOP
+boundary 작업의 직접적 결과 — 잡담은 메모리에 안 들어가고, 중복은 또
+저장 안 됨. 반면 correction / retraction tier 가 모두 FAIL — 메모리는
+"새로 저장" 보다 "이미 있는 것을 정정 / 회수" 가 본질적으로 더 어렵
+습니다.
+
+### 4.4 Lever decision — 어디를 손봐야 가장 효과 큰가 (진행 중)
+
+문제: retraction 22% 의 *원인이 무엇인가*. 모델 capacity 한계? Prompt
+의 demos 가 잘못 가르치고 있나? 파이프라인 구조 자체가 부족한가? 이걸
+가르려면 **counterfactual 측정** 이 필요합니다. 같은 harness 로 두
+reference config 를 더 측정:
+
+1. **demo ablation** — 현재 production prompt 의 few-shot 데모만 zero
+   out, instruction 그대로. (`MEMORY_UPDATE_DEMO_ABLATION=1` 환경 변수.)
+2. **31B executor swap** — 같은 BFRS artifact 를 31B 모델이 실행.
+   (`MEMORY_EXECUTOR_MODEL=gemma4:31b`.)
+
+3-config delta (correction_success_rate):
+
+| Tier | Baseline (E2B) | Demo ablation (E2B) | 31B exec swap |
+|---|---:|---:|---:|
+| **retraction** | **22.2%** | **66.7% (+44.4pp)** | **66.7% (+44.4pp)** |
+| longitudinal | 52.9% | 41.2% (−11.8pp) | **80.4% (+27.5pp)** |
+| compound_correction | 60.0% | 76.7% (+16.7pp) | 53.3% (−6.7pp) |
+| simple_correction | 62.5% | 50.0% (−12.5pp) | 62.5% (0.0pp) |
+| transient_noise | 100% | 100% | 100% |
+| duplicate | 100% | 100% | 100% |
+| **headline** | **54.2%** | 59.7% (+5.6pp) | **70.8% (+16.7pp)** |
+
+핵심 관찰: **retraction tier 에서 demo ablation 과 31B swap 이 정확히
+같은 +44.4pp.** 두 다른 매커니즘 (demos 제거 / capacity 증대) 이 같은
+ceiling 에 도달했다는 것은, *capacity 단독으로는* retraction 을 못
+끌어올린다는 뜻 — capacity 가 진짜 lever 라면 31B 가 demo ablation 보다
+*더 위* 로 올라가야 합니다. 동일하다는 것은 **demos 가 retraction 에서
+잘못된 방향으로 LM 을 이끌고 있고**, demos 제거든 capacity 증대든 둘 다
+*demos 영향력을 무력화* 하는 두 다른 path 라는 해석.
+
+이 한 관찰로 다음 작업 (Stage 23) 의 lever 가 결정됨:
+
+- **1순위: demo regeneration.** 현 BFRS demos 가 retraction 시나리오에서
+  발목 잡고 있다는 직접 증거. 다만 demo ablation 이 simple/longitudinal
+  에서 regress 했으므로 *단순 zero-out 은 안 되고* selective curation
+  필요.
+- **2순위: 더 큰 모델로 swap.** longitudinal 의 +27.5pp 는 진짜 capacity
+  이득이지만 retraction 이득은 demo 효과와 구분 불가. on-device 내러티
+  브가 약화되므로 lever 1 결과를 보고 결정.
+
+[디테일은 source repo 의 `docs/stage_22b/reference_configs.md` 에 정리되어
+있습니다 — mirror sync 이후 이 repo 의 `docs/` 에도 동기화 예정.]
+
+### 4.5 재현하기
+
+```bash
+# Harness 실행 (live backend + 31B judge 필요, 약 40 분 — GPU 두 장 가정)
+BACKEND_URL=http://127.0.0.1:8002 \
+ROUTER_API_KEY=dev-key \
+JUDGE_OLLAMA_URL=http://127.0.0.1:11434 \
+JUDGE_MODEL=gemma4:31b \
+HARNESS_TAG=local_repro \
+HARNESS_REPS=3 \
+$HOME/micromamba/envs/llm_router/bin/python -m pytest -m harness \
+  tests/test_memory_store_state_harness.py -s
+```
+
+Production 메모리 artifacts:
+
+- `research/artifacts/optimized_memory_extract_gemma4_e2b_bfrs.json` —
+  Extract (Stage 10.2 BFRS)
+- `research/artifacts/optimized_memory_update_gemma4_e2b_bfrs.json` —
+  Update (Stage 20 A BFRS, prompt md5 `74fada63...`)
+- `research/artifacts/optimized_memory_intent_gemma4_e2b_bfrs.json` —
+  Intent gate (Stage 11.1-11.2 BFRS)
+- `research/artifacts/optimized_memory_retract_gemma4_e2b_bfrs.json` —
+  RetractionDecide (Stage 11.3 BFRS)
 
 ---
 
@@ -194,8 +378,11 @@ Production 아티팩트: `research/artifacts/optimized_router_state_gemma4_e2b_b
 
 - **레퍼런스 / 티처 모델**: Gemma 4 31B via Ollama — F1 ceiling 레퍼런스 + DSPy proposer 양쪽으로 사용
 - **온디바이스 SLM**: Gemma 4 E2B (5.12B, production), Qwen 3.5 0.8B (873M, 비교용)
-- **DSPy 옵티마이저**: `BootstrapFewShotWithRandomSearch` (BFRS) — §3.2 ablation 에서 MIPROv2 / COPRO 와 비교 후 채택
-- **평가**: 600 큐레이션 hold-out 셋, weighted F1 + privacy leak rate
+- **DSPy 옵티마이저**: `BootstrapFewShotWithRandomSearch` (BFRS) — 라우터 + 메모리 4 결정 (Extract / Update / Intent / Retract) 모두 같은 옵티마이저로 학습. §3.2 ablation 에서 MIPROv2 / COPRO 와 비교 후 채택
+- **Runtime**: LangChain LCEL + `ChatOllama(cache=False)` async (Stage 17 이후 — DSPy 는 offline 최적화 전용, runtime 에는 들어가지 않음)
+- **메모리 storage**: SQLite + `sqlite-vec` (per-user isolation), BGE-small 384-d 임베더
+- **라우터 평가**: 600 큐레이션 hold-out 셋, weighted F1 + privacy leak rate
+- **메모리 평가**: store-state harness (25 시나리오 × 6 tier × 195 turns, `pytest -m harness`) + 31B paraphrase-aware LLM-as-judge
 - **Python**: 3.11 (micromamba)
 
 ---
