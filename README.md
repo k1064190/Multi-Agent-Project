@@ -45,11 +45,11 @@ flowchart LR
     router --> cloud
     router --> search
 
-    classDef user fill:#e0f2fe,stroke:#0369a1
-    classDef dec fill:#fef3c7,stroke:#d97706
-    classDef mem fill:#dcfce7,stroke:#15803d
-    classDef be fill:#f3e8ff,stroke:#7c3aed
-    classDef store fill:#fee2e2,stroke:#dc2626
+    classDef user fill:#e0f2fe,stroke:#0369a1,color:#0c4a6e
+    classDef dec fill:#fef3c7,stroke:#d97706,color:#78350f
+    classDef mem fill:#dcfce7,stroke:#15803d,color:#14532d
+    classDef be fill:#f3e8ff,stroke:#7c3aed,color:#581c87
+    classDef store fill:#fee2e2,stroke:#dc2626,color:#7f1d1d
 ```
 
 라우팅 분류기는 사용자 질의를 **Local / Cloud / Search** 세 가지로
